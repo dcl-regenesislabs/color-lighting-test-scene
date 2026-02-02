@@ -14,17 +14,13 @@ import {
 import { Color4, Vector3, Quaternion } from '@dcl/sdk/math'
 import { setupUi, setTimeLabel, setCameraLabel } from './ui'
 
-// Time presets in seconds (0 = midnight, 43200 = noon, 86400 = 24h)
-export const TIME_PRESETS: { [key: string]: number } = {
-  '00:00 Midnight': 0,
-  '03:00': 10800,
-  '06:00 Dawn': 21600,
-  '09:00 Morning': 32400,
-  '12:00 Noon': 43200,
-  '15:00 Afternoon': 54000,
-  '18:00 Sunset': 64800,
-  '21:00 Night': 75600
-}
+// Time presets: one per hour, in seconds (0 = midnight, 3600 = 1h, ..., 82800 = 23:00)
+export const TIME_PRESETS: { [key: string]: number } = Object.fromEntries(
+  Array.from({ length: 24 }, (_, h) => {
+    const label = `${String(h).padStart(2, '0')}:00`
+    return [label, h * 3600]
+  })
+)
 
 // Camera positions for fixed views - focused on scene elements
 export const CAMERA_POSITIONS: { [key: string]: { pos: Vector3; lookAt: Vector3 } } = {
@@ -46,7 +42,7 @@ export const SKY_POSITIONS: { [key: string]: { pos: Vector3; lookAt: Vector3 } }
   'Sky - Sun Path': { pos: Vector3.create(24, 100, 24), lookAt: Vector3.create(124, 150, 24) }
 }
 
-let currentTimeKey = '12:00 Noon'
+let currentTimeKey = '12:00'
 let currentCameraKey = 'Free Camera'
 
 // Store virtual camera entities
@@ -145,7 +141,7 @@ export function main() {
   console.log('===========================================')
 
   // Initialize time to noon
-  setTime('12:00 Noon')
+  setTime('12:00')
 
   // ============================================
   // Floor - Neutral gray (48x48m for 3x3 parcels)

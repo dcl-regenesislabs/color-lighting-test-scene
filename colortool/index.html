@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skybox Color Analyzer — Orientation & Hour</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 {
+            text-align: center;
+            margin-bottom: 8px;
+            color: #00d4ff;
+            font-size: 1.8em;
+        }
+        .subtitle { text-align: center; color: #888; margin-bottom: 24px; font-size: 0.95em; }
+
+        .controls {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 24px;
+            border-left: 4px solid #00d4ff;
+        }
+        .controls h2 { color: #00d4ff; margin-bottom: 12px; font-size: 1.1em; }
+        .control-row { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; }
+        .control-group { display: flex; align-items: center; gap: 8px; }
+        .control-group label { color: #aaa; font-weight: 600; }
+        select {
+            background: #0f1626;
+            color: #eee;
+            border: 1px solid #333;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+        select option { background: #0f1626; color: #eee; }
+        .orientation-tabs { display: flex; gap: 4px; }
+        .orientation-tabs button {
+            padding: 8px 16px;
+            border: 1px solid #333;
+            background: #0f1626;
+            color: #888;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .orientation-tabs button:hover { color: #00d4ff; border-color: #00d4ff; }
+        .orientation-tabs button.active { background: #00d4ff; color: #1a1a2e; border-color: #00d4ff; }
+
+        .time-card {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .time-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #00d4ff;
+        }
+        .time-label { font-size: 1.3em; font-weight: bold; color: #00d4ff; }
+        .brightness-badge {
+            background: #0f1626;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        .gradient-preview {
+            height: 180px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .color-zones { display: grid; gap: 8px; }
+        .zone-row {
+            display: flex;
+            align-items: center;
+            background: #0f1626;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .zone-label { width: 90px; font-weight: 600; color: #888; font-size: 0.9em; }
+        .zone-color {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            margin-right: 12px;
+            border: 2px solid #333;
+        }
+        .zone-values { flex: 1; display: flex; gap: 12px; font-family: monospace; font-size: 0.85em; }
+        .zone-values span { background: #1a1a2e; padding: 4px 8px; border-radius: 4px; }
+
+        .no-data {
+            text-align: center;
+            padding: 40px 20px;
+            color: #888;
+            background: #16213e;
+            border-radius: 12px;
+        }
+        .load-error {
+            background: rgba(255, 100, 100, 0.15);
+            border-left: 4px solid #f66;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #faa;
+        }
+        .load-error strong { color: #f66; }
+        .load-file {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 24px;
+            border-left: 4px solid #5f9;
+        }
+        .load-file p { color: #aaa; margin-bottom: 12px; }
+        .load-file input[type="file"] { display: none; }
+        .load-file button {
+            padding: 10px 20px;
+            background: #00d4ff;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .load-file button:hover { background: #33ddff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Skybox Color Analyzer</h1>
+        <p class="subtitle">By orientation (W, E, N, S, U) and hour (0–23)</p>
+
+        <div id="load-error" class="load-error" style="display: none;"></div>
+
+        <div id="load-file" class="load-file">
+            <p>Open this page as a file? Load the color data manually:</p>
+            <input type="file" id="file-input" accept=".json,application/json" />
+            <button type="button" id="load-file-btn">Choose skybox_colors_godot.json</button>
+        </div>
+
+        <div id="controls" class="controls" style="display: none;">
+            <h2>Select view</h2>
+            <div class="control-row">
+                <div class="control-group">
+                    <label>Orientation</label>
+                    <div class="orientation-tabs" id="orientation-tabs"></div>
+                </div>
+                <div class="control-group">
+                    <label>Hour</label>
+                    <select id="hour-select"></select>
+                </div>
+            </div>
+        </div>
+
+        <div id="content"></div>
+    </div>
+
+    <script>
+        const ORIENTATIONS = ['W', 'E', 'N', 'S', 'U'];
+        const ORIENTATION_LABELS = { W: 'West', E: 'East', N: 'North', S: 'South', U: 'Up' };
+        let colorData = [];
+
+        function colorToRgb(color) {
+            if (!color || color.r == null) return 'rgb(0,0,0)';
+            const r = Math.round((color.r ?? 0) * 255);
+            const g = Math.round((color.g ?? 0) * 255);
+            const b = Math.round((color.b ?? 0) * 255);
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function createGradient(colors) {
+            const stops = [
+                { pos: '0%', color: colors.zenith },
+                { pos: '25%', color: colors.upper },
+                { pos: '50%', color: colors.middle },
+                { pos: '75%', color: colors.lower },
+                { pos: '90%', color: colors.horizon },
+                { pos: '100%', color: colors.water }
+            ];
+            const gradientStops = stops.map(s => `${colorToRgb(s.color)} ${s.pos}`).join(', ');
+            return `linear-gradient(to bottom, ${gradientStops})`;
+        }
+
+        function findEntry(orientation, hour) {
+            return colorData.find(e => e.orientation === orientation && e.hour === hour);
+        }
+
+        function renderCard(entry) {
+            const brightnessPercent = (entry.brightness * 100).toFixed(1);
+            const brightnessClass = entry.brightness < 0.33 ? '🌙 Dark' :
+                entry.brightness > 0.66 ? '☀️ Bright' : '🌤️ Medium';
+
+            let zonesHtml = '';
+            for (const [zone, color] of Object.entries(entry.colors)) {
+                if (!color || (color.r == null && color.g == null && color.b == null)) continue;
+                zonesHtml += `
+                    <div class="zone-row">
+                        <div class="zone-label">${zone}</div>
+                        <div class="zone-color" style="background: ${colorToRgb(color)}"></div>
+                        <div class="zone-values">
+                            <span>R: ${color.r ?? 0}</span>
+                            <span>G: ${color.g ?? 0}</span>
+                            <span>B: ${color.b ?? 0}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="time-card">
+                    <div class="time-header">
+                        <div class="time-label">${ORIENTATION_LABELS[entry.orientation]} @ ${entry.time}</div>
+                        <div class="brightness-badge">${brightnessClass} (${brightnessPercent}%)</div>
+                    </div>
+                    <div class="gradient-preview" style="background: ${createGradient(entry.colors)}"></div>
+                    <div class="color-zones">${zonesHtml}</div>
+                </div>
+            `;
+        }
+
+        function renderNoData(orientation, hour) {
+            return `
+                <div class="no-data">
+                    No data for ${ORIENTATION_LABELS[orientation]} at hour ${String(hour).padStart(2, '0')}.<br>
+                    Run <code>python skybox_analyzer.py</code> in this folder to generate data from Screenshots.
+                </div>
+            `;
+        }
+
+        function updateContent(orientation, hour) {
+            const content = document.getElementById('content');
+            const entry = findEntry(orientation, hour);
+            if (entry) {
+                content.innerHTML = renderCard(entry);
+            } else {
+                content.innerHTML = renderNoData(orientation, hour);
+            }
+        }
+
+        function buildControls() {
+            const tabs = document.getElementById('orientation-tabs');
+            ORIENTATIONS.forEach(orient => {
+                const btn = document.createElement('button');
+                btn.textContent = orient;
+                btn.title = ORIENTATION_LABELS[orient];
+                btn.addEventListener('click', () => {
+                    tabs.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const hour = parseInt(document.getElementById('hour-select').value, 10);
+                    updateContent(orient, hour);
+                });
+                tabs.appendChild(btn);
+            });
+
+            const hourSelect = document.getElementById('hour-select');
+            for (let h = 0; h < 24; h++) {
+                const opt = document.createElement('option');
+                opt.value = h;
+                opt.textContent = `${String(h).padStart(2, '0')}:00`;
+                hourSelect.appendChild(opt);
+            }
+            hourSelect.value = '12';
+            hourSelect.addEventListener('change', () => {
+                const orient = document.querySelector('.orientation-tabs button.active')?.textContent || 'E';
+                updateContent(orient, parseInt(hourSelect.value, 10));
+            });
+
+            document.querySelector('.orientation-tabs button').classList.add('active');
+        }
+
+        function onDataLoaded(data) {
+            colorData = Array.isArray(data) ? data : [];
+            document.getElementById('load-error').style.display = 'none';
+            document.getElementById('load-file').style.display = 'none';
+            document.getElementById('controls').style.display = 'block';
+            buildControls();
+            updateContent('E', 12);
+        }
+
+        document.getElementById('load-file-btn').addEventListener('click', () => {
+            document.getElementById('file-input').click();
+        });
+        document.getElementById('file-input').addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const data = JSON.parse(ev.target.result);
+                    onDataLoaded(data);
+                } catch (err) {
+                    document.getElementById('load-error').innerHTML =
+                        '<strong>Invalid JSON.</strong> Choose skybox_colors_godot.json from the colortool folder.';
+                    document.getElementById('load-error').style.display = 'block';
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        function init() {
+            const dataPath = 'skybox_colors_godot.json';
+            fetch(dataPath)
+                .then(r => {
+                    if (!r.ok) throw new Error(`Failed to load ${dataPath} (${r.status}). Run skybox_analyzer.py first.`);
+                    return r.json();
+                })
+                .then(data => {
+                    document.getElementById('load-file').style.display = 'none';
+                    onDataLoaded(data);
+                })
+                .catch(() => {
+                    document.getElementById('load-error').innerHTML =
+                        '<strong>Auto-load failed</strong> (normal if you opened the HTML as a file). Use the button below to choose <code>skybox_colors_godot.json</code>.';
+                    document.getElementById('load-error').style.display = 'block';
+                });
+        }
+
+        init();
+    </script>
+</body>
+</html>

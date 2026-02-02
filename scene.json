@@ -47,5 +47,11 @@
   "featureToggles": {
     "voiceChat": "enabled",
     "portableExperiences": "enabled"
+  },
+  "creator": "",
+  "skyboxConfig": {},
+  "source": {
+    "origin": "creator-hub",
+    "projectId": "00b23483-1b17-4f6c-b582-bc2893800208"
   }
 }
